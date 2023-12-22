@@ -1,7 +1,6 @@
 import json
 import logging.config
 import os
-from pprint import pprint
 from time import sleep
 from urllib.parse import urljoin, urlsplit
 
