@@ -128,4 +128,4 @@ def get_books_by_ids(ids, dest_folder, skip_imgs=False, skip_txt=False):
 
 
 if __name__ == '__main__':
-    get_books_by_ids([1, 2])
+    get_books_by_ids([1, 2, 3], 'tululu_books')
