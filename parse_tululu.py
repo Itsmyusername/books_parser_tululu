@@ -19,37 +19,23 @@ BOOKS_FOLDER = 'books'
 
 
 def main():
-    catalogue = []
-    last_page = get_last_category_page(BOOK_CATEGORY)
-
-    parser = argparse.ArgumentParser(description='Этот скрипт скачает книги и изображения')
-    parser.add_argument('--start_page', type=int, default=1, help='Начальная страница')
-    parser.add_argument('--end_page', type=int, default=last_page + 1, help='Страница, перед которой остановить парсинг')
+    parser = argparse.ArgumentParser(description='Этот скрипт скачает книги по диапазону ID')
+    parser.add_argument('--start_id', type=int, required=True, help='ID первой книги для скачивания')
+    parser.add_argument('--end_id', type=int, required=True, help='ID последней книги для скачивания')
     args = parser.parse_args()
 
-    for page_number in range(args.start_page, args.end_page):
-        book_category_paginated = urllib.parse.urljoin(BOOK_CATEGORY, str(page_number))
-        response = requests.get(book_category_paginated, verify=False)
+    for book_id in range(args.start_id, args.end_id + 1):
         try:
-            response.raise_for_status()
-            pars_books_from_page(response, catalogue)
+            book_info, pic_url = parse_book_page(str(book_id))
+            book_path = download_txt(str(book_id), book_info["title"])
+            book_info['book_path'] = book_path
+            if book_path:
+                img_src = download_image(pic_url)
+                book_info['img_src'] = img_src
+                # Здесь можно добавить логику для обработки информации о книге
         except requests.exceptions.HTTPError as err:
-            pass
-
-    write_books_meta_to_json(catalogue)
-
-
-def write_books_meta_to_json(books_meta_raw):
-    with open('books.json', 'w', encoding='UTF-8') as json_file:
-        json.dump(books_meta_raw, json_file, ensure_ascii=False, indent=2)
-
-
-def get_last_category_page(category_url):
-    response = requests.get(category_url)
-    soup = BeautifulSoup(response.text, 'lxml')
-    selector = '.center a:last-of-type'
-    last_page = soup.select_one(selector).text
-    return int(last_page)
+            print(f"Не удалось скачать книгу с ID {book_id}: {err}")
+            continue
 
 
 def parse_book_page(book_id):
@@ -61,8 +47,17 @@ def parse_book_page(book_id):
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
     h1_text = soup.select_one('body h1').text
-    title, author = h1_text.split('::')
-    pic_url = soup.select_one('.bookimage img')['src']
+    parts = h1_text.split('::', 1)
+    if len(parts) == 2:
+        title, author = parts
+    else:
+        title = h1_text
+        author = "Неизвестен"
+    img_tag = soup.select_one('.bookimage img')
+    if img_tag and 'src' in img_tag.attrs:
+        pic_url = img_tag['src']
+    else:
+        pic_url = ''
     comments = [comment.text for comment in soup.select('.ow_px_td .black')]
     genres = [genre.text for genre in soup.select('.ow_px_td span.d_book a')]
     book_info = {
@@ -96,7 +91,8 @@ def download_txt(book_id, book_title):
     response = requests.get(BOOK_DOWNLOAD_PATTERN, params=payload, verify=False)
     response.raise_for_status()
     if response.url == 'https://tululu.org/':
-        raise ValueError(f"Unexpected redirect or invalid book ID: {book_id}")
+        print(f"Redirect detected or invalid book ID: {book_id}")
+        return None  # Возвращаем None или путь к файлу-заглушке
     try:
         txt_full_path = posixpath.join(BOOKS_FOLDER, '')
         Path(txt_full_path).mkdir(parents=True, exist_ok=True)
