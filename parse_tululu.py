@@ -95,14 +95,20 @@ def download_txt(book_id, book_title):
     payload = {'id': book_id}
     response = requests.get(BOOK_DOWNLOAD_PATTERN, params=payload, verify=False)
     response.raise_for_status()
-    if not response.url == 'https://tululu.org/':
+    if response.url == 'https://tululu.org/':
+        raise ValueError(f"Unexpected redirect or invalid book ID: {book_id}")
+    try:
         txt_full_path = posixpath.join(BOOKS_FOLDER, '')
         Path(txt_full_path).mkdir(parents=True, exist_ok=True)
         filename = f'{txt_full_path}{book_title}.txt'
+    except OSError as e:
+        raise OSError(f"Error creating directory or file path: {e}")
+    try:
         with open(filename, 'w', encoding='UTF-8') as book:
             book.write(response.text)
-        book_path = posixpath.join(txt_full_path, f'{book_title}.txt')
-        return book_path
+    except IOError as e:
+        raise IOError(f"Error writing to file: {e}")
+    return posixpath.join(txt_full_path, f'{book_title}.txt')
 
 
 def download_image(img_relative_src):
