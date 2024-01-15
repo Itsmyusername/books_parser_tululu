@@ -32,7 +32,6 @@ def main():
             if book_path:
                 img_src = download_image(pic_url)
                 book_info['img_src'] = img_src
-                # Здесь можно добавить логику для обработки информации о книге
         except requests.exceptions.HTTPError as err:
             print(f"Не удалось скачать книгу с ID {book_id}: {err}")
             continue
