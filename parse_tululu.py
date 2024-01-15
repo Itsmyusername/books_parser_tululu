@@ -45,9 +45,9 @@ def parse_book_page(book_id):
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
     h1_text = soup.select_one('body h1').text
-    parts = h1_text.split('::', 1)
-    if len(parts) == 2:
-        title, author = parts
+    part_of_name_book = h1_text.split('::', 1)
+    if len(part_of_name_book) == 2:
+        title, author = part_of_name_book
     else:
         title = h1_text
         author = "Неизвестен"
