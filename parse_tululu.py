@@ -42,7 +42,6 @@ def parse_book_page(book_id):
     response = requests.get(book_url, verify=False)
     if response.history:
         print("Redirect detected")
-        response = requests.get(response.url, verify=False)
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
     h1_text = soup.select_one('body h1').text
