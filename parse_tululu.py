@@ -26,12 +26,12 @@ def main():
 
     for book_id in range(args.start_id, args.end_id + 1):
         try:
-            book_info, pic_url = parse_book_page(str(book_id))
-            book_path = download_txt(str(book_id), book_info["title"])
-            book_info['book_path'] = book_path
+            book_details, pic_url = parse_book_page(str(book_id))
+            book_path = download_txt(str(book_id), book_details["title"])
+            book_details['book_path'] = book_path
             if book_path:
                 img_src = download_image(pic_url)
-                book_info['img_src'] = img_src
+                book_details['img_src'] = img_src
         except requests.exceptions.HTTPError as err:
             print(f"Не удалось скачать книгу с ID {book_id}: {err}")
             continue
@@ -59,7 +59,7 @@ def parse_book_page(book_id):
         pic_url = ''
     comments = [comment.text for comment in soup.select('.ow_px_td .black')]
     genres = [genre.text for genre in soup.select('.ow_px_td span.d_book a')]
-    book_info = {
+    book_details = {
         'title': pathvalidate.sanitize_filename(title.strip()),
         'author': author.strip(),
         'img_src': '',
@@ -67,7 +67,7 @@ def parse_book_page(book_id):
         'comments': comments,
         'genres': genres
     }
-    return book_info, pic_url
+    return book_details, pic_url
 
 
 def pars_books_from_page(response, catalogue):
@@ -76,13 +76,13 @@ def pars_books_from_page(response, catalogue):
     books_listing_raw = soup.select(selector)
     for book_tag in books_listing_raw:
         book_id = book_tag['href'].strip('/b')
-        book_info, pic_url = parse_book_page(book_id)
-        book_path = download_txt(book_id, book_info["title"])
-        book_info['book_path'] = book_path
+        book_details, pic_url = parse_book_page(book_id)
+        book_path = download_txt(book_id, book_details["title"])
+        book_details['book_path'] = book_path
         if book_path:
             img_src = download_image(pic_url)
-            book_info['img_src'] = img_src
-            catalogue.append(book_info)
+            book_details['img_src'] = img_src
+            catalogue.append(book_details)
 
 
 def download_txt(book_id, book_title):
