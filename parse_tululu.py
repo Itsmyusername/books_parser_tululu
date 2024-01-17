@@ -7,6 +7,8 @@ import pathvalidate
 import requests
 import urllib3
 from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 VHOST = 'https://tululu.org'
@@ -39,9 +41,26 @@ def main():
 
 
 def get_html(url):
-    response = requests.get(url, verify=False)
+    response = session.get(url, verify=False)
     response.raise_for_status()
     return response.text
+
+
+def create_session(retries=3, backoff_factor=0.3):
+    session = requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=(500, 502, 503, 504),
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
+
+session = create_session() 
 
 
 def parse_book_page(html_content, book_id):
