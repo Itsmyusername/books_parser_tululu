@@ -1,5 +1,4 @@
 import argparse
-import json
 import posixpath
 import urllib
 from pathlib import Path
@@ -10,7 +9,6 @@ import urllib3
 from bs4 import BeautifulSoup
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-BOOK_CATEGORY = 'https://tululu.org/l55/'
 VHOST = 'https://tululu.org'
 BOOK_DOWNLOAD_PATTERN = 'https://tululu.org/txt.php'
 BOOK_PAGE_PATTERN = 'https://tululu.org/b'
@@ -25,8 +23,10 @@ def main():
     args = parser.parse_args()
 
     for book_id in range(args.start_id, args.end_id + 1):
+        book_url = f'{BOOK_PAGE_PATTERN}{book_id}'
         try:
-            book_details, pic_url = parse_book_page(str(book_id))
+            html_content = get_html(book_url)
+            book_details, pic_url = parse_book_page(html_content, book_id)
             book_path = download_txt(str(book_id), book_details["title"])
             book_details['book_path'] = book_path
             if book_path:
@@ -37,13 +37,14 @@ def main():
             continue
 
 
-def parse_book_page(book_id):
-    book_url = f'{BOOK_PAGE_PATTERN}{book_id}'
-    response = requests.get(book_url, verify=False)
-    if response.history:
-        print("Redirect detected")
+def get_html(url):
+    response = requests.get(url, verify=False)
     response.raise_for_status()
-    soup = BeautifulSoup(response.text, 'lxml')
+    return response.text
+
+
+def parse_book_page(html_content, book_id):
+    soup = BeautifulSoup(html_content, 'lxml')
     h1_text = soup.select_one('body h1').text
     part_of_name_book = h1_text.split('::', 1)
     if len(part_of_name_book) == 2:
@@ -67,6 +68,13 @@ def parse_book_page(book_id):
         'genres': genres
     }
     return book_details, pic_url
+
+
+def get_book_page(book_id):
+    book_url = f'{BOOK_PAGE_PATTERN}{book_id}'
+    response = requests.get(book_url, verify=False)
+    response.raise_for_status()
+    return response.text
 
 
 def pars_books_from_page(response, catalogue):
