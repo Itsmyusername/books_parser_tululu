@@ -89,12 +89,6 @@ def parse_book_page(html_content, book_url):
     return book_details
 
 
-def get_book_page(book_url):
-    response = requests.get(book_url, verify=False)
-    response.raise_for_status()
-    return response.text
-
-
 def download_txt(book_id, book_title):
     filename = f'{book_title}.txt'
     txt_full_path = posixpath.join(BOOKS_FOLDER, filename)
