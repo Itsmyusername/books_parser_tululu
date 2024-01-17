@@ -23,11 +23,12 @@ def main():
     parser.add_argument('--start_id', type=int, required=True, help='ID первой книги для скачивания')
     parser.add_argument('--end_id', type=int, required=True, help='ID последней книги для скачивания')
     args = parser.parse_args()
+    session = create_session()
 
     for book_id in range(args.start_id, args.end_id + 1):
         book_url = f'{BOOK_PAGE_PATTERN}{book_id}'
         try:
-            html_content = get_html(book_url)
+            html_content = get_html(book_url, session)
             book_details = parse_book_page(html_content, book_url)
             book_path = download_txt(str(book_id), book_details["title"])
             book_details['book_path'] = book_path
@@ -39,7 +40,7 @@ def main():
             continue
 
 
-def get_html(url):
+def get_html(url, session):
     response = session.get(url, verify=False)
     response.raise_for_status()
     return response.text
@@ -58,8 +59,6 @@ def create_session(retries=3, backoff_factor=0.3):
     session.mount('http://', adapter)
     session.mount('https://', adapter)
     return session
-
-session = create_session() 
 
 
 def parse_book_page(html_content, book_url):
