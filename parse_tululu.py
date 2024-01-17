@@ -26,15 +26,16 @@ def main():
         book_url = f'{BOOK_PAGE_PATTERN}{book_id}'
         try:
             html_content = get_html(book_url)
-            book_details, pic_url = parse_book_page(html_content, book_id)
+            book_details = parse_book_page(html_content, book_id)
             book_path = download_txt(str(book_id), book_details["title"])
             book_details['book_path'] = book_path
             if book_path:
-                img_src = download_image(pic_url)
+                img_src = download_image(book_details['img_src'])
                 book_details['img_src'] = img_src
         except requests.exceptions.HTTPError as err:
             print(f"Не удалось скачать книгу с ID {book_id}: {err}")
             continue
+
 
 
 def get_html(url):
@@ -62,12 +63,12 @@ def parse_book_page(html_content, book_id):
     book_details = {
         'title': pathvalidate.sanitize_filename(title.strip()),
         'author': author.strip(),
-        'img_src': '',
+        'img_src': pic_url,
         'book_path': '',
         'comments': comments,
         'genres': genres
     }
-    return book_details, pic_url
+    return book_details
 
 
 def get_book_page(book_id):
