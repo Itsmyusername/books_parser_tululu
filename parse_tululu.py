@@ -28,7 +28,7 @@ def main():
         book_url = f'{BOOK_PAGE_PATTERN}{book_id}'
         try:
             html_content = get_html(book_url)
-            book_details = parse_book_page(html_content, book_id)
+            book_details = parse_book_page(html_content, book_url)
             book_path = download_txt(str(book_id), book_details["title"])
             book_details['book_path'] = book_path
             if book_path:
@@ -37,7 +37,6 @@ def main():
         except requests.exceptions.HTTPError as err:
             print(f"Не удалось скачать книгу с ID {book_id}: {err}")
             continue
-
 
 
 def get_html(url):
@@ -63,7 +62,7 @@ def create_session(retries=3, backoff_factor=0.3):
 session = create_session() 
 
 
-def parse_book_page(html_content, book_id):
+def parse_book_page(html_content, book_url):
     soup = BeautifulSoup(html_content, 'lxml')
     h1_text = soup.select_one('body h1').text
     part_of_name_book = h1_text.split('::', 1)
@@ -74,7 +73,7 @@ def parse_book_page(html_content, book_id):
         author = "Неизвестен"
     img_tag = soup.select_one('.bookimage img')
     if img_tag and 'src' in img_tag.attrs:
-        pic_url = img_tag['src']
+        pic_url = urllib.parse.urljoin(book_url, img_tag['src'])
     else:
         pic_url = ''
     comments = [comment.text for comment in soup.select('.ow_px_td .black')]
@@ -90,8 +89,7 @@ def parse_book_page(html_content, book_id):
     return book_details
 
 
-def get_book_page(book_id):
-    book_url = f'{BOOK_PAGE_PATTERN}{book_id}'
+def get_book_page(book_url):
     response = requests.get(book_url, verify=False)
     response.raise_for_status()
     return response.text
