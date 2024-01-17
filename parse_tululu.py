@@ -96,37 +96,34 @@ def get_book_page(book_url):
 
 
 def download_txt(book_id, book_title):
+    filename = f'{book_title}.txt'
+    txt_full_path = posixpath.join(BOOKS_FOLDER, filename)
+    Path(BOOKS_FOLDER).mkdir(parents=True, exist_ok=True)
     payload = {'id': book_id}
     response = requests.get(BOOK_DOWNLOAD_PATTERN, params=payload, verify=False)
     response.raise_for_status()
     if response.url == 'https://tululu.org/':
         print(f"Redirect detected or invalid book ID: {book_id}")
-        return None  # Возвращаем None или путь к файлу-заглушке
-    try:
-        txt_full_path = posixpath.join(BOOKS_FOLDER, '')
-        Path(txt_full_path).mkdir(parents=True, exist_ok=True)
-        filename = f'{txt_full_path}{book_title}.txt'
-    except OSError as e:
-        raise OSError(f"Error creating directory or file path: {e}")
-    try:
-        with open(filename, 'w', encoding='UTF-8') as book:
-            book.write(response.text)
-    except IOError as e:
-        raise IOError(f"Error writing to file: {e}")
-    return posixpath.join(txt_full_path, f'{book_title}.txt')
+        return None
+
+    with open(txt_full_path, 'w', encoding='UTF-8') as book:
+        book.write(response.text)
+
+    return txt_full_path
 
 
 def download_image(img_relative_src):
+    img_name = posixpath.basename(img_relative_src)
+    img_full_path = posixpath.join(IMAGES_FOLDER, img_name)
+    Path(IMAGES_FOLDER).mkdir(parents=True, exist_ok=True)
     pic_absolute_url = urllib.parse.urljoin(VHOST, img_relative_src)
     response = requests.get(pic_absolute_url, verify=False)
     response.raise_for_status()
-    image_full_path = posixpath.join(IMAGES_FOLDER, '')
-    Path(image_full_path).mkdir(parents=True, exist_ok=True)
-    img_name = posixpath.basename(pic_absolute_url)
-    with open(f'{image_full_path}{img_name}', 'wb') as img:
+
+    with open(img_full_path, 'wb') as img:
         img.write(response.content)
-    img_src = posixpath.join(image_full_path, img_name)
-    return img_src
+
+    return img_full_path
 
 
 if __name__ == '__main__':
