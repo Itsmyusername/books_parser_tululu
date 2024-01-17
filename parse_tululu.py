@@ -9,6 +9,8 @@ import urllib3
 from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+from requests.exceptions import HTTPError
+
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 VHOST = 'https://tululu.org'
@@ -41,9 +43,16 @@ def main():
 
 
 def get_html(url, session):
+    response = requests.get(url)
+    check_for_redirect(response)
     response = session.get(url, verify=False)
     response.raise_for_status()
     return response.text
+
+
+def check_for_redirect(response):
+    if response.history and response.url == VHOST:
+        raise HTTPError(f"Перенаправление на главную страницу: {response.url}")
 
 
 def create_session(retries=3, backoff_factor=0.3):
