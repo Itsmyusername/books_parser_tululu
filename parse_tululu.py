@@ -110,8 +110,7 @@ def download_image(img_relative_src):
     img_name = posixpath.basename(img_relative_src)
     img_full_path = posixpath.join(IMAGES_FOLDER, img_name)
     Path(IMAGES_FOLDER).mkdir(parents=True, exist_ok=True)
-    pic_absolute_url = urllib.parse.urljoin(VHOST, img_relative_src)
-    response = requests.get(pic_absolute_url, verify=False)
+    response = requests.get(img_relative_src, verify=False)
     response.raise_for_status()
 
     with open(img_full_path, 'wb') as img:
