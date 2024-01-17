@@ -97,21 +97,6 @@ def get_book_page(book_id):
     return response.text
 
 
-def pars_books_from_page(response, catalogue):
-    soup = BeautifulSoup(response.text, features='lxml')
-    selector = '.ow_px_td .bookimage a'
-    books_listing_raw = soup.select(selector)
-    for book_tag in books_listing_raw:
-        book_id = book_tag['href'].strip('/b')
-        book_details, pic_url = parse_book_page(book_id)
-        book_path = download_txt(book_id, book_details["title"])
-        book_details['book_path'] = book_path
-        if book_path:
-            img_src = download_image(pic_url)
-            book_details['img_src'] = img_src
-            catalogue.append(book_details)
-
-
 def download_txt(book_id, book_title):
     payload = {'id': book_id}
     response = requests.get(BOOK_DOWNLOAD_PATTERN, params=payload, verify=False)
