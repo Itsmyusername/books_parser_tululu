@@ -43,9 +43,8 @@ def main():
 
 
 def get_html(url, session):
-    response = requests.get(url)
-    check_for_redirect(response)
     response = session.get(url, verify=False)
+    check_for_redirect(response)
     response.raise_for_status()
     return response.text
 
