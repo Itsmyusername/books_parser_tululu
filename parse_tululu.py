@@ -32,10 +32,10 @@ def main():
         try:
             html_content = get_html(book_url, session)
             book_details = parse_book_page(html_content, book_url)
-            book_path = download_txt(str(book_id), book_details["title"])
+            book_path = download_txt(str(book_id), book_details["title"], session)
             book_details['book_path'] = book_path
-            if book_path:
-                img_src = download_image(book_details['img_src'])
+            if book_path and book_details['img_src']:
+                img_src = download_image(book_details['img_src'], session)
                 book_details['img_src'] = img_src
         except requests.exceptions.HTTPError as err:
             print(f"Не удалось скачать книгу с ID {book_id}: {err}")
@@ -44,13 +44,13 @@ def main():
 
 def get_html(url, session):
     response = session.get(url, verify=False)
-    check_for_redirect(response)
+    check_for_redirect(response, VHOST)
     response.raise_for_status()
     return response.text
 
 
-def check_for_redirect(response):
-    if response.history and response.url == VHOST:
+def check_for_redirect(response, home_url):
+    if response.url == home_url:
         raise HTTPError(f"Перенаправление на главную страницу: {response.url}")
 
 
@@ -96,33 +96,43 @@ def parse_book_page(html_content, book_url):
     return book_details
 
 
-def download_txt(book_id, book_title):
+def download_txt(book_id, book_title, session):
     filename = f'{book_title}.txt'
     txt_full_path = posixpath.join(BOOKS_FOLDER, filename)
-    Path(BOOKS_FOLDER).mkdir(parents=True, exist_ok=True)
-    payload = {'id': book_id}
-    response = requests.get(BOOK_DOWNLOAD_PATTERN, params=payload, verify=False)
-    response.raise_for_status()
-    if response.url == 'https://tululu.org/':
-        print(f"Redirect detected or invalid book ID: {book_id}")
+    book_url = f'{BOOK_DOWNLOAD_PATTERN}?id={book_id}'
+    response = session.get(book_url, verify=False)
+    try:
+        check_for_redirect(response, VHOST)
+        response.raise_for_status()
+    except HTTPError as e:
+        print(f"Ошибка перенаправления: {e}")
+        return None
+    except requests.RequestException as e:
+        print(f"Ошибка при скачивании текста книги {book_title} (ID {book_id}): {e}")
         return None
 
     with open(txt_full_path, 'w', encoding='UTF-8') as book:
         book.write(response.text)
-
     return txt_full_path
 
 
-def download_image(img_relative_src):
-    img_name = posixpath.basename(img_relative_src)
+def download_image(img_src, session):
+    img_name = posixpath.basename(img_src)
     img_full_path = posixpath.join(IMAGES_FOLDER, img_name)
     Path(IMAGES_FOLDER).mkdir(parents=True, exist_ok=True)
-    response = requests.get(img_relative_src, verify=False)
-    response.raise_for_status()
+    response = session.get(img_src, verify=False)
+    try:
+        check_for_redirect(response, VHOST)
+        response.raise_for_status()
+    except HTTPError as e:
+        print(f"Ошибка перенаправления при загрузке изображения: {e}")
+        return None
+    except requests.RequestException as e:
+        print(f"Ошибка при скачивании изображения {img_src}: {e}")
+        return None
 
     with open(img_full_path, 'wb') as img:
         img.write(response.content)
-
     return img_full_path
 
 
