@@ -99,9 +99,10 @@ def parse_book_page(html_content, book_url):
 def download_txt(book_id, book_title, session):
     filename = f'{book_title}.txt'
     txt_full_path = posixpath.join(BOOKS_FOLDER, filename)
-    book_url = f'{BOOK_DOWNLOAD_PATTERN}?id={book_id}'
-    response = session.get(book_url, verify=False)
+    Path(BOOKS_FOLDER).mkdir(parents=True, exist_ok=True)
+    payload = {'id': book_id}
     try:
+        response = session.get(BOOK_DOWNLOAD_PATTERN, params=payload, verify=False)
         check_for_redirect(response, VHOST)
         response.raise_for_status()
     except HTTPError as e:
