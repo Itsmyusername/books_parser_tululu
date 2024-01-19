@@ -37,8 +37,8 @@ def main():
             if book_path and book_details['img_src']:
                 img_src = try_download_image(book_details['img_src'], session)
                 book_details['img_src'] = img_src
-        except requests.exceptions.HTTPError as err:
-            print(f"Не удалось скачать книгу с ID {book_id}: {err}")
+        except requests.exceptions.RequestException as e:
+            print(f"Не удалось обработать книгу с ID {book_id}: {e}")
             continue
 
 
