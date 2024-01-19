@@ -32,34 +32,14 @@ def main():
         try:
             html_content = get_html(book_url, session)
             book_details = parse_book_page(html_content, book_url)
-            book_path = try_download_txt(str(book_id), book_details["title"], session)
+            book_path = download_txt(str(book_id), book_details["title"], session)
             book_details['book_path'] = book_path
             if book_path and book_details['img_src']:
-                img_src = try_download_image(book_details['img_src'], session)
+                img_src = download_image(book_details['img_src'], session)
                 book_details['img_src'] = img_src
         except requests.exceptions.RequestException as e:
             print(f"Не удалось обработать книгу с ID {book_id}: {e}")
             continue
-
-
-def try_download_txt(book_id, book_title, session):
-    try:
-        return download_txt(book_id, book_title, session)
-    except HTTPError as e:
-        print(f"Ошибка перенаправления при скачивании текста книги {book_title} (ID {book_id}): {e}")
-    except requests.RequestException as e:
-        print(f"Ошибка при скачивании текста книги {book_title} (ID {book_id}): {e}")
-    return None
-
-
-def try_download_image(img_src, session):
-    try:
-        return download_image(img_src, session)
-    except HTTPError as e:
-        print(f"Ошибка перенаправления при скачивании изображения: {e}")
-    except requests.RequestException as e:
-        print(f"Ошибка при скачивании изображения {img_src}: {e}")
-    return None
 
 
 def get_html(url, session):
